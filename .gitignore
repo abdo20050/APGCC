@@ -1,7 +1,7 @@
 # Python bytecode and cache
 __pycache__/
 *.pyc
-
+*.mp4
 # Pre-trained models (often large binaries)
 apgcc/models/vgg16_bn-6c64b313.pth
 
