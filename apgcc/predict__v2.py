@@ -16,6 +16,7 @@ import cv2
 import torchvision.transforms as standard_transforms
 from glob import glob
 from typing import List
+from kalman_tracker import Track, PointTracker
 
 # --- Project-specific imports ---
 # Add the project root to the Python path to allow for absolute imports
@@ -187,6 +188,35 @@ def visualize_results(image_to_display, points, count, image_path, output_dir=No
             print(f"Result saved to {output_path}")
             plt.close()
 
+def merge_close_points(points, threshold):
+    points = np.array(points)
+    if len(points) == 0:
+        return []
+
+    merged = []
+    visited = set()
+
+    for i in range(len(points)):
+        if i in visited:
+            continue
+        cluster = [points[i]]
+        visited.add(i)
+
+        for j in range(i + 1, len(points)):
+            if j in visited:
+                continue
+            dist = np.linalg.norm(points[i] - points[j])
+            if dist < threshold:
+                cluster.append(points[j])
+                visited.add(j)
+
+        # cluster_avg = np.mean(cluster, axis=0)
+        # merged.append(cluster_avg)
+        # print(cluster)
+        merged.append(cluster[0])  # Use the latest point in the cluster as the representative
+
+    return merged
+
 def main():
     args = get_args()
     
@@ -247,6 +277,15 @@ def main():
             out = None
 
         frame_count = 0
+        # --- Kalman Filter Tracker Setup ---
+        tracks = []
+        max_missed_frames = 5
+        matching_threshold = 100  # pixels
+        track_id_counter = 0
+        tracker = PointTracker(distance_threshold=10000)
+        collected_points = []
+        displayed_points = np.empty((0, 2))  # For displaying points in the video
+        window = 2  # Number of frames to collect before displaying points
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -258,13 +297,56 @@ def main():
             pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             display_img, img_tensor = preprocess_image(pil_img, cfg_)
             points, count = run_inference(model, img_tensor, args.threshold)
-
+            if len(displayed_points) == 0:
+                displayed_points = np.array(points)
+            if frame_count % window:
+                collected_points.extend(points.tolist())
+            else:
+                displayed_points = merge_close_points(collected_points, threshold=5)
+                collected_points = []
             #Kalman filter integration would go here to update 'points'
+            # updated_points = []
+            # used_tracks = set()
+            # assigned_tracks = {}
+
+            # for pt in points:
+            #     best_track = None
+            #     best_dist = float('inf')
+            #     for track in tracks:
+            #         if track.track_id in used_tracks:
+            #             continue
+            #         pred = track.predict()
+            #         dist = np.linalg.norm(pred - pt)
+            #         if dist < best_dist and dist < matching_threshold:
+            #             best_dist = dist
+            #             best_track = track
+
+            #     if best_track:
+            #         best_track.update(pt)
+            #         used_tracks.add(best_track.track_id)
+            #         updated_pt = best_track.kf.x[:2].flatten()
+            #         updated_points.append((updated_pt[0], updated_pt[1], best_track.track_id))
+            #     else:
+            #         new_track = Track(pt, track_id_counter)
+            #         tracks.append(new_track)
+            #         updated_points.append((pt[0], pt[1], track_id_counter))
+            #         track_id_counter += 1
+
+            # # Remove old tracks
+            # tracks = [t for t in tracks if t.missed < max_missed_frames]
+
+            # Result: updated_points = list of (x, y, id)
+            points = tracker.update(points)
+            
 
             if out:
                 #Visualization for video output (using OpenCV directly on the frame)
-                for point in points:
-                    cv2.circle(frame, (int(point[0]), int(point[1])), 3, (0, 0, 255), -1)  # Red circles
+                for point in displayed_points:
+                    # print(point)
+                    x, y, tid = int(point[0]), int(point[1]), 1
+                    cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)  # Red circles
+                    # cv2.putText(frame, f"ID:{tid}", (x + 5, y - 5),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
+                                                        
                 cv2.putText(frame, f"Count: {count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # Green count text
                 out.write(frame)
             else:

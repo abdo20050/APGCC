@@ -1,0 +1,61 @@
+Using device: cuda
+Model weights loaded successfully.
+Processing 5 videos from: ./test_vid/tester/
+
+Processing video: ./test_vid/tester\input_1.mp4
+
+Processing video: ./test_vid/tester\input_2.mp4
+
+Processing video: ./test_vid/tester\input_3.mp4
+
+Processing video: ./test_vid/tester\input_4.mp4
+
+Processing video: ./test_vid/tester\input_5.mp4
+
+========= DETAILED PERFORMANCE REPORT =========
+
+Video: input_1.mp4
+  Duration: 5.00 seconds (120 frames)
+  Resolution: 960x540
+  Inference Time [s]: Avg=0.1187, Min=0.1080, Max=0.7828
+  Memory Usage [MB]: Avg=1.94, Min=0.00, Max=232.43
+  Count Predictions: Avg=19.62, Min=14, Max=24
+------------------------------------------------------------
+Video: input_2.mp4
+  Duration: 5.00 seconds (120 frames)
+  Resolution: 960x540
+  Inference Time [s]: Avg=0.1218, Min=0.1107, Max=0.1425
+  Memory Usage [MB]: Avg=0.01, Min=-0.05, Max=0.98
+  Count Predictions: Avg=41.27, Min=33, Max=47
+------------------------------------------------------------
+Video: input_3.mp4
+  Duration: 5.00 seconds (120 frames)
+  Resolution: 960x540
+  Inference Time [s]: Avg=0.1470, Min=0.1285, Max=0.1523
+  Memory Usage [MB]: Avg=0.00, Min=0.00, Max=0.00
+  Count Predictions: Avg=87.46, Min=71, Max=106
+------------------------------------------------------------
+Video: input_4.mp4
+  Duration: 5.00 seconds (120 frames)
+  Resolution: 960x540
+  Inference Time [s]: Avg=0.1503, Min=0.1484, Max=0.1548
+  Memory Usage [MB]: Avg=0.00, Min=0.00, Max=0.05
+  Count Predictions: Avg=50.52, Min=28, Max=62
+------------------------------------------------------------
+Video: input_5.mp4
+  Duration: 5.00 seconds (120 frames)
+  Resolution: 960x540
+  Inference Time [s]: Avg=0.1504, Min=0.1482, Max=0.1558
+  Memory Usage [MB]: Avg=0.00, Min=0.00, Max=0.00
+  Count Predictions: Avg=66.92, Min=53, Max=82
+------------------------------------------------------------
+
+========= SUMMARY =========
+Device used: cuda
+Average Inference Time: 0.1376s
+Min/Max Inference Time: 0.1187s / 0.1504s
+Average Memory Usage: 0.39 MB
+Min/Max Memory Usage: 0.00 MB / 1.94 MB
+Average Count (all videos): 53.16
+
+Report saved to tester_report_20250723_154823.log
