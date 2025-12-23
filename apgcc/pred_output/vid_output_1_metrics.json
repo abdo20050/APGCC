@@ -1,0 +1,34 @@
+{
+    "video_file": "vid_output_1.mp4",
+    "total_frames_analyzed": 120,
+    "comparison": {
+        "raw_model": {
+            "micro_average": {
+                "precision": 0.9812995620783524,
+                "recall": 0.6950289211166066,
+                "f1_score": 0.8137206791638041,
+                "mae_pixels": 3.37596130136637
+            },
+            "macro_average": {
+                "precision": 0.9783329465178031,
+                "recall": 0.6892754258309014,
+                "f1_score": 0.807087919850636,
+                "mae_pixels": 3.4006375505610036
+            }
+        },
+        "tracked_model": {
+            "micro_average": {
+                "precision": 0.8910711038370612,
+                "recall": 0.8215273702741219,
+                "f1_score": 0.8548872508396215,
+                "mae_pixels": 4.457841029649837
+            },
+            "macro_average": {
+                "precision": 0.8712842276594311,
+                "recall": 0.8111239964554093,
+                "f1_score": 0.8377982612879096,
+                "mae_pixels": 4.313616380653708
+            }
+        }
+    }
+}

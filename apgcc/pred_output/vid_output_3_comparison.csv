@@ -1,0 +1,9 @@
+Metric,Aggregation,Raw Model,Tracked Model,Difference
+Precision,Micro,0.967,0.877,-0.09
+Recall,Micro,0.676,0.843,0.167
+F1 Score,Micro,0.795,0.86,0.064
+MAE,Micro,3.074,3.97,0.895
+Precision,Macro,0.979,0.86,-0.118
+Recall,Macro,0.67,0.834,0.163
+F1 Score,Macro,0.793,0.845,0.053
+MAE,Macro,3.075,3.846,0.771
