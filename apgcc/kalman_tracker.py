@@ -16,17 +16,22 @@ class KalmanPointTracker(object):
         self.kf.H = np.array([[1, 0, 0, 0],
                               [0, 1, 0, 0]])
 
-        self.kf.P *= 10.0
-        self.kf.R *= 1.0   # Trust the detection position
+        # --- TUNING FOR MOMENTUM ---
         
-        # --- STABILITY TUNING ---
+        # P: Covariance. 
+        self.kf.P *= 100.0 
+
+        # R: Measurement Noise. 
+        # Kept high (10.0) to smooth out path jitter. 
+        # This ensures the velocity vector points in the general direction of movement,
+        # rather than snapping to the last noisy pixel.
+        self.kf.R *= 10.0   
+        
         # Q: Process Noise. 
-        # Low Q for velocity (indices 2,3) means "assume constant straight line speed"
-        # High Q means "expect random turns"
-        # We LOWER velocity noise to stop random jitter.
+        # Very low velocity noise enforces "Inertia" (keep moving in same line).
         self.kf.Q[-1, -1] *= 0.01 
-        self.kf.Q[-2, -2] *= 0.01
-        self.kf.Q[:2, :2] *= 0.05 
+        self.kf.Q[-2, -2] *= 0.01 
+        self.kf.Q[:2, :2] *= 0.1   
 
         self.kf.x[:2] = initial_point.reshape((2, 1))
         
@@ -43,29 +48,37 @@ class KalmanPointTracker(object):
         self.hit_streak += 1
         self.kf.update(point)
 
-    def predict(self):
-        # --- YOUNG TRACK DAMPING ---
-        # If the track is new (seen < 3 times) and disappears, 
-        # assume it is NOT moving. This prevents noise from creating flying ghosts.
-        if self.time_since_update > 0 and self.hits < 3:
-            self.kf.x[2] = 0  # Kill X Velocity
-            self.kf.x[3] = 0  # Kill Y Velocity
+        # --- VELOCITY WARM-UP (SOFTENED) ---
+        # Previously was 0.5 (too harsh). Now 0.9.
+        # This prevents noise from launching a point, but allows real movement 
+        # to build up speed quickly.
+        if self.hits < 3:
+            self.kf.x[2] *= 0.9 
+            self.kf.x[3] *= 0.9 
 
+    def predict(self):
         # 1. Standard Prediction
         self.kf.predict()
         
         # --- VELOCITY CLAMPING ---
-        # Prevent ghosts from accelerating to infinity.
-        # Max speed: 20 pixels per frame (adjust if your people run very fast)
+        # Cap max speed to prevent "teleporting"
         max_speed = 20
         self.kf.x[2] = np.clip(self.kf.x[2], -max_speed, max_speed)
         self.kf.x[3] = np.clip(self.kf.x[3], -max_speed, max_speed)
 
-        # --- FRICTION CONTROL ---
-        # Apply decay to slow down ghosts over time
+        # --- LOW FRICTION (GLIDE) ---
+        # Previously 0.9 (brake). Now 0.98 (glide).
+        # 0.98^30 ~= 0.55 (Retains 55% speed after 1 second)
         if self.time_since_update > 0:
-            self.kf.x[2] *= 0.9
-            self.kf.x[3] *= 0.9
+            speed = np.sqrt(self.kf.x[2]**2 + self.kf.x[3]**2)
+            decay = 0.98
+            
+            # Only apply stronger braking if it's really flying (>15px/frame)
+            if speed > 15: 
+                decay = 0.95
+            
+            self.kf.x[2] *= decay
+            self.kf.x[3] *= decay
             
         self.age += 1
         if(self.time_since_update > 0):
@@ -77,7 +90,7 @@ class KalmanPointTracker(object):
         return self.kf.x[:2].reshape((1, 2))
 
 class SortPointTracker(object):
-    def __init__(self, max_age=40, min_hits=1, distance_threshold=80):
+    def __init__(self, max_age=40, min_hits=1, distance_threshold=60):
         self.max_age = max_age
         self.min_hits = min_hits
         self.distance_threshold = distance_threshold
@@ -118,7 +131,9 @@ class SortPointTracker(object):
         for trk in reversed(self.trackers):
             d = trk.get_state()
             
-            # Show if it's active or a valid ghost
+            # Output if active.
+            # Logic: If it's a "ghost" (time_since_update > 0), we assume it's valid
+            # as long as it hasn't exceeded max_age.
             if (trk.time_since_update <= self.max_age) and (trk.hits >= self.min_hits):
                 is_predicted = 1 if trk.time_since_update > 0 else 0
                 ret.append(np.concatenate((d.flatten(), [trk.id, is_predicted])).reshape(1, -1)) 

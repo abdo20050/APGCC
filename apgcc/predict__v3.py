@@ -177,7 +177,7 @@ def get_args():
     parser.add_argument('--threshold', type=float, default=0.5)
     # --- NEW ARGUMENT ---
     parser.add_argument('--gt_csv', type=str, default=None, help="Path to pixel_coords.csv. Defaults to <input_filename>.csv if available.")
-    parser.add_argument('--match_dist', type=float, default=25.0, help="Distance threshold (pixels) for matching GT to Pred")
+    parser.add_argument('--match_dist', type=float, default=12.0, help="Distance threshold (pixels) for matching GT to Pred")
     return parser.parse_args()
 
 def preprocess_image(image_input, cfg):
@@ -303,7 +303,7 @@ def main():
         
         # --- TRACKER ---
         if SortPointTracker:
-            tracker = SortPointTracker(max_age=40, min_hits=3, distance_threshold=80) 
+            tracker = SortPointTracker(max_age=10, min_hits=3, distance_threshold=80) 
         else:
             tracker = None
         
@@ -391,7 +391,8 @@ def main():
                     cv2.putText(frame, line, (15, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
                 
                 # --- DRAW GROUND TRUTH (White Squares) ---
-                box_size = 12  # Half-width (Total width = 24px)
+                dist_threshold=args.match_dist
+                box_size = int(dist_threshold)  # Half-width (Total width = dist_threshold*2)
                 for gx, gy in current_gt:
                     # Draw White Rectangle (Thickness 1)
                     cv2.rectangle(frame, (gx - box_size, gy - box_size), (gx + box_size, gy + box_size), (255, 255, 255), 1)
